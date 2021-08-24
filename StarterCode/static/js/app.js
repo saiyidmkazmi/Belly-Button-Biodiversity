@@ -1,7 +1,7 @@
 init();
 
 function init() {
-    defaultStatus.json(data/samples.json).then((data)=> {
+    d3.json("samples.json").then((data)=> {
         var dropdownMenu = d3.select("#selDataset");
         // Append <option> tags with test subject IDs
         data.samples.forEach((subject) => {
@@ -9,25 +9,30 @@ function init() {
             option.text(subject.id).attr("value", `${subject.id}`);
         })
 
-        selectedId = getId();
+        var selectedId = getId();
+        console.log(selectedId);
 
-        panel = ds.select("#sample-metadata");
+        var panel = d3.select("#sample-metadata");
+        panel.html('');
 
-        filteredmd = data.metadata.filter(subject => subject.id == selectedId);
+        var filteredSamples = data.samples.filter(subject => subject.id == selectedId);
+        var filteredMetaData = data.metadata.filter(subject => subject.id == selectedId);
 
         Object.entries(filteredMetaData[0]).forEach(([key, value]) => {
-            var demInfo = panel.append("p");
-            demInfo.text(`${key}: ${value}`);
+            panel.append("p").text(`${key}: ${value}`);
         })
         
         // Horizontal Bar Chart
 
-        var filteredData = data.samples.filter(subject => subject.id === selectedId);
         
+        console.log(data);
+
+        console.log(filteredMetaData[0]);
+
         var traceBar = {
-            x: filteredData[0].sample_values.slice(0, 10).map(value => value).reverse(),
-            y: filteredData[0].otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse(),
-            text: filteredData[0].otu_labels.slice(0, 10).map(label => label).reverse(),
+            x: filteredSamples[0].sample_values.slice(0, 10).map(value => value).reverse(),
+            y: filteredSamples[0].otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse(),
+            text: filteredSamples[0].otu_labels.slice(0, 10).map(label => label).reverse(),
             type: "bar",
             orientation: "h"
         };
@@ -44,13 +49,13 @@ function init() {
         // Buble Chart
 
         var traceBubble = {
-            x: filteredData[0].otu_ids,
-            y: filteredData[0].sample_values,
-            text: filteredData[0].otu_labels,
+            x: filteredMetaData[0].otu_ids,
+            y: filteredMetaData[0].sample_values,
+            text: filteredMetaData[0].otu_labels,
             mode: "markers",
             marker: {
-                color: filteredData[0].otu_ids,
-                size: filteredData[0].sample_values
+                color: filteredMetaData[0].otu_ids,
+                size: filteredMetaData[0].sample_values
             }
         };
 
@@ -115,83 +120,84 @@ function getId() {
 }
 
 
-// Function to re-render visuals when an option (ID) is selected (or changed)
-function optionChanged(selectedId) {
 
-    // Load data
-    d3.json("data/samples.json").then((data) => {
 
-        // ----------------------------------------------
-        // Update panel
-        panel = d3.select("#sample-metadata");
-        // Clear the exisiting default children <p> tags from the <div>
-        panel.html("")
+// // Function to re-render visuals when an option (ID) is selected (or changed)
+// function optionChanged(selectedId) {
 
-        // Filter to include only the metadata for the selected subject ID
-        filteredMetaData = data.metadata.filter(subject => subject.id == selectedId);
+//     // Load data
+//     d3.json("data/samples.json").then((data) => {
 
-        // Append <p> tags with key-value paired metadata
-        Object.entries(filteredMetaData[0]).forEach(([key, value]) => {
-            var demInfo = panel.append("p");
-            demInfo.text(`${key}: ${value}`);
-        })
+//         // ----------------------------------------------
+//         // Update panel
+//         panel = d3.select("#sample-metadata");
+//         // Clear the exisiting default children <p> tags from the <div>
+//         panel.html("")
 
-        // ----------------------------------------------
-        // Update bar chart
+//         // Filter to include only the metadata for the selected subject ID
+//         filteredMetaData = data.metadata.filter(subject => subject.id == selectedId);
 
-        // Filter to include only the data for the selected subject ID
-        var filteredData = data.samples.filter(subject => subject.id === selectedId);
+//         // Append <p> tags with key-value paired metadata
+//         Object.entries(filteredMetaData[0]).forEach(([key, value]) => {
+//             var demInfo = panel.append("p").text(`${key}: ${value}`);
+//         })
 
-        var xBar = filteredData[0].sample_values.slice(0, 10).map(value => value).reverse();
-        var yBar = filteredData[0].otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse();
-        var textBar = filteredData[0].otu_labels.slice(0, 10).map(label => label).reverse();
+//         // ----------------------------------------------
+//         // Update bar chart
+
+//         // Filter to include only the data for the selected subject ID
+//         var filteredData = data.samples.filter(subject => subject.id === selectedId);
+
+//         var xBar = filteredData[0].sample_values.slice(0, 10).map(value => value).reverse();
+//         var yBar = filteredData[0].otu_ids.slice(0, 10).map(id => `OTU ${id}`).reverse();
+//         var textBar = filteredData[0].otu_labels.slice(0, 10).map(label => label).reverse();
         
-        var dataUpdateBar = {
-            "x": [xBar],
-            "y": [yBar],
-            "text": [textBar]
-        };
+//         var dataUpdateBar = {
+//             "x": [xBar],
+//             "y": [yBar],
+//             "text": [textBar]
+//         };
 
-        var layoutUpdateBar = {
-            title: `Test Subject ${selectedId}'s Top 10 OTUs`
-        };
+//         var layoutUpdateBar = {
+//             title: `Test Subject ${selectedId}'s Top 10 OTUs`
+//         };
 
-        // Update the bar chart with data plus title to reflect the selected ID
-        Plotly.update("bar", dataUpdateBar, layoutUpdateBar);
+//         // Update the bar chart with data plus title to reflect the selected ID
+//         Plotly.update("bar", dataUpdateBar, layoutUpdateBar);
 
-        // ----------------------------------------------
-        // Update bubble chart
-        var xBubble = filteredData[0].otu_ids;
-        var yBubble = filteredData[0].sample_values;
-        var textBubble = filteredData[0].otu_labels;
-        var colorBubble = filteredData[0].otu_ids;
-        var sizeBubble = filteredData[0].sample_values;
+//         // ----------------------------------------------
+//         // Update bubble chart
+//         var xBubble = filteredData[0].otu_ids;
+//         var yBubble = filteredData[0].sample_values;
+//         var textBubble = filteredData[0].otu_labels;
+//         var colorBubble = filteredData[0].otu_ids;
+//         var sizeBubble = filteredData[0].sample_values;
         
-        var dataUpdateBubble = {
-            "x": [xBubble],
-            "y": [yBubble],
-            "text": [textBubble],
-            "marker.color": [colorBubble],
-            "marker.size": [sizeBubble]
-        };
+//         var dataUpdateBubble = {
+//             "x": [xBubble],
+//             "y": [yBubble],
+//             "text": [textBubble],
+//             "marker.color": [colorBubble],
+//             "marker.size": [sizeBubble]
+//         };
 
-        var layoutUpdateBubble = {
-            title: `Test Subject ${selectedId}'s Sample Values by OTU ID`
-        };
+//         var layoutUpdateBubble = {
+//             title: `Test Subject ${selectedId}'s Sample Values by OTU ID`
+//         };
 
-        // Update the bubble chart with data plus title to reflect the selected ID
-        Plotly.update("bubble", dataUpdateBubble, layoutUpdateBubble);
+//         // Update the bubble chart with data plus title to reflect the selected ID
+//         Plotly.update("bubble", dataUpdateBubble, layoutUpdateBubble);
 
-        // ----------------------------------------------
-        // Update gauge chart
-        var wfreq = filteredMetaData[0].wfreq;
+//         // ----------------------------------------------
+//         // Update gauge chart
+//         var wfreq = filteredMetaData[0].wfreq;
 
-        // Restyle gauge chart
-        Plotly.restyle("gauge", "value", [wfreq]);
+//         // Restyle gauge chart
+//         Plotly.restyle("gauge", "value", [wfreq]);
 
-        // Re-adjust gauge chart title position...
-        d3.selectAll("text>tspan.line").attr("y", "-20");
-        // Customize the color of the gauge chart's number indicator
-        d3.selectAll("g>text.number").style("fill", "#db5773");
-    })        
-    }
+//         // Re-adjust gauge chart title position...
+//         d3.selectAll("text>tspan.line").attr("y", "-20");
+//         // Customize the color of the gauge chart's number indicator
+//         d3.selectAll("g>text.number").style("fill", "#db5773");
+//     })        
+//     }
